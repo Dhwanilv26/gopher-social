@@ -1,125 +1,125 @@
-// package main
-
-// import (
-// 	"errors"
-// )
-
-// var ErrTruckNotFound = errors.New("truck not found")
-
-// type FleetManager interface {
-// 	AddTruck(id string, cargo int) error
-// 	GetTruck(id string) (*Truck, error)
-// 	RemoveTruck(id string) error
-// 	UpdateTruckCargo(id string, cargo int) error
-// }
-
-// type Truck struct {
-// 	ID    string
-// 	Cargo int
-// }
-
-// type truckManager struct {
-// 	trucks map[string]*Truck
-// }
-
-// func NewTruckManager() truckManager {
-// 	return truckManager{
-// 		trucks: make(map[string]*Truck),
-// 	}
-// }
-
-// func (tm truckManager) AddTruck(id string, cargo int) error {
-// 	tm.trucks[id] = &Truck{
-// 		ID:    id,
-// 		Cargo: cargo,
-// 	}
-// 	return nil
-// }
-
-// func (tm truckManager) GetTruck(id string) (*Truck, error) {
-// 	truck, ok := tm.trucks[id]
-
-// 	if !ok {
-// 		return nil, ErrTruckNotFound
-// 	}
-// 	return truck, nil
-// }
-
-// func (tm truckManager) UpdateTruckCargo(id string, cargo int) error {
-// 	truck, ok := tm.trucks[id]
-
-// 	if !ok {
-// 		return ErrTruckNotFound
-// 	}
-
-// 	truck.Cargo = cargo
-
-// 	return nil
-// }
-
-// func (tm truckManager) RemoveTruck(id string) error {
-
-// 	_, ok := tm.trucks[id]
-
-// 	if !ok {
-// 		return ErrTruckNotFound
-// 	}
-
-// 	delete(tm.trucks, id)
-// 	return nil
-// }
-
 package main
 
 import (
+	"errors"
 	"fmt"
 	"sync"
-	"time"
 )
 
-func worker(id int, jobs chan int, results chan int, wg *sync.WaitGroup) {
+type User struct {
+	ID   int
+	Name string
+}
 
-	defer wg.Done()
+type UserStore struct {
+	mu    sync.RWMutex // combining the user with the mutex, so that the operations have the same mutex instance while dealing with the user
+	users map[int]User
+}
 
-	for job := range jobs {
-		fmt.Println("worker", id, "got job", job)
-		result := job * job
-		time.Sleep(time.Second)
-		results <- result
+func NewUserStore() *UserStore {
+	return &UserStore{
+		users: make(map[int]User),
 	}
+}
+
+func (s *UserStore) Create(user User) error {
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, exists := s.users[user.ID]; exists {
+		return errors.New("user already exists")
+	}
+
+	s.users[user.ID] = user
+	return nil
+}
+
+func (s *UserStore) Get(id int) (User, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	user, exists := s.users[id]
+
+	if !exists {
+		return User{}, errors.New("user not found")
+	}
+	return user, nil
+}
+
+func (s *UserStore) Update(id int, name string) error {
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	user, exists := s.users[id]
+
+	if !exists {
+		return errors.New("user not found")
+	}
+
+	user.Name = name
+	s.users[id] = user
+
+	return nil
+}
+
+func (s *UserStore) Delete(id int) error {
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	_, exists := s.users[id]
+
+	if !exists {
+		return errors.New("user not found")
+	}
+
+	delete(s.users, id)
+
+	return nil
+}
+
+func (s *UserStore) List() []User {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	users := make([]User, 0, len(s.users))
+
+	for _, user := range s.users {
+		users = append(users, user)
+	}
+	return users
 }
 
 func main() {
 
-	jobs := make(chan int)
-	results := make(chan int, 5)
+	store := NewUserStore()
 
-	var wg sync.WaitGroup
-
-	wg.Add(3)
-
-	go worker(1, jobs, results, &wg)
-	go worker(2, jobs, results, &wg)
-	go worker(3, jobs, results, &wg)
-
-	jobs <- 100
-	jobs <- 200
-	jobs <- 300
-	jobs <- 400
-	jobs <- 500
-
-	close(jobs) // used not to free memory, but we will not send data into the jobs channel from now onwards
-
-	go func() {
-		wg.Wait()
-		close(results)
-	}()
-
-	fmt.Println("results from jobs are:")
-
-	for result := range results {
-		fmt.Println(result)
+	if err := store.Create(User{ID: 1, Name: "Dhwanil"}); err != nil {
+		fmt.Println(err)
+		return
 	}
 
-	fmt.Println("all workers finished")
+	user, err := store.Get(1)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println("read:", user)
+
+	if err := store.Update(1, "Alex"); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println("all users:", store.List())
+
+	if err := store.Delete(1); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println("after deletion:", store.List())
 }
