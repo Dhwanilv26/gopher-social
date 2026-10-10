@@ -1,0 +1,2 @@
+channels -> wait untill the value is handed over
+wait group -> wait untill the go routine is finished
