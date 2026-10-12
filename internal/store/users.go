@@ -27,6 +27,7 @@ func (s *UsersStore) Create(ctx context.Context, user *User) error {
 
 	err := s.db.QueryRowContext(
 		ctx,
+		query,
 		user.Username,
 		user.Password,
 		user.Email,
