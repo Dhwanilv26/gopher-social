@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/Dhwanilv26/gopher-social/internal/env"
+	"github.com/Dhwanilv26/gopher-social/internal/store"
 	"github.com/joho/godotenv"
 )
 
@@ -16,7 +17,13 @@ func main() {
 	cfg := config{
 		addr: env.GetString("ADDRESS", ":8080"),
 	}
-	app := &application{config: cfg}
+
+	store := store.NewStorage(nil)
+
+	app := &application{
+		config: cfg,
+		store:  store,
+	}
 
 	mux := app.mount()
 	log.Fatal(app.run(mux))
