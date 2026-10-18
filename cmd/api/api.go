@@ -17,6 +17,7 @@ type application struct {
 
 type config struct {
 	addr string
+	env  string
 	db   dBConfig
 }
 
