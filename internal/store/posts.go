@@ -38,6 +38,7 @@ func (s *PostsStore) Create(ctx context.Context, post *Post) error {
 		&post.CreatedAt,
 		&post.UpdatedAt,
 	)
+	// scanning here to get the full post struct, (union of values the client provides and the values the db generates)
 
 	if err != nil {
 		return err
