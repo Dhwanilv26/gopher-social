@@ -20,6 +20,11 @@ type CreatePostPayload struct {
 	Tags    []string `json:"tags"`
 } // only dealing with the fields client is allowed to send while creating a post
 
+type UpdatePostPayload struct {
+	Title   *string `json:"title" validate:"omitempty,max=100"`
+	Content *string `json:"content" validate:"omitempty,max=1000"`
+}
+
 func (app *application) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	var payload CreatePostPayload
 
@@ -98,6 +103,31 @@ func (app *application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 func (app *application) UpdatePostHandler(w http.ResponseWriter, r *http.Request) {
 
 	post := getPostFromCtx(r)
+
+	var payload UpdatePostPayload
+
+	if err := ReadJSON(w, r, &payload); err != nil {
+		app.BadRequestResponse(w, r, err)
+		return
+	}
+
+	if err := Validate.Struct(payload); err != nil {
+		app.BadRequestResponse(w, r, err)
+		return
+	}
+
+	if payload.Content != nil {
+		post.Content = *payload.Content
+	}
+
+	if payload.Title != nil {
+		post.Title = *payload.Title
+	}
+
+	if err := app.store.Posts.Update(r.Context(), post); err != nil {
+		app.InternalServerError(w, r, err)
+		return
+	}
 
 	if err := WriteJSON(w, http.StatusOK, post); err != nil {
 		app.InternalServerError(w, r, err)
