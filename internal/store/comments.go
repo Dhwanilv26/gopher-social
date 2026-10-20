@@ -30,6 +30,9 @@ func (s *CommentsStore) GetByPostId(ctx context.Context, postId int64) ([]Commen
 	WHERE c.post_id = $1
 	ORDER BY c.created_at DESC`
 
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeOutDuration)
+	defer cancel()
+
 	rows, err := s.db.QueryContext(ctx, query, postId)
 
 	if err != nil {
