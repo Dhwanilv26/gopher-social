@@ -108,7 +108,7 @@ func (s *PostsStore) Update(ctx context.Context, post *Post) error {
 	WHERE id = $3
 	`
 
-	_, err := s.db.ExecContext(ctx, query, post.Title, post.ID)
+	_, err := s.db.ExecContext(ctx, query, post.Title, post.Content, post.ID)
 
 	if err != nil {
 		return err
