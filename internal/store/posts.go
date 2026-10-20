@@ -105,11 +105,13 @@ func (s *PostsStore) Delete(ctx context.Context, postId int64) error {
 
 func (s *PostsStore) Update(ctx context.Context, post *Post) error {
 	query := `
-	UPDATE posts
-	SET title = $1, content = $2, version = version + 1
-	WHERE id = $3 AND version = $4
-	RETURNING version
-	`
+        UPDATE posts
+        SET title = $1,
+            content = $2,
+            version = version + 1
+        WHERE id = $3 AND version = $4
+        RETURNING version
+    `
 
 	err := s.db.QueryRowContext(
 		ctx,
@@ -121,26 +123,11 @@ func (s *PostsStore) Update(ctx context.Context, post *Post) error {
 	).Scan(&post.Version)
 
 	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			return err
-		}
-		
-		var exists bool
-		err = s.db.QueryRowContext(
-			ctx,
-			`SELECT EXISTS (SELECT 1 FROM posts WHERE id = $1)`,
-			post.ID,
-		).Scan(&exists)
-
-		if err != nil {
-			return err
-		}
-
-		if !exists {
+		if errors.Is(err, sql.ErrNoRows) {
 			return ErrNotFound
 		}
 
-		return ErrVersionConflict
+		return err
 	}
 
 	return nil

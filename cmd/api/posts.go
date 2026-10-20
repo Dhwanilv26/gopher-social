@@ -23,7 +23,6 @@ type CreatePostPayload struct {
 type UpdatePostPayload struct {
 	Title   *string `json:"title" validate:"omitempty,max=100"`
 	Content *string `json:"content" validate:"omitempty,max=1000"`
-	Version *int    `json:"version" validate:"required,min=0"`
 }
 
 func (app *application) CreatePostHandler(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +101,6 @@ func (app *application) DeletePostHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) UpdatePostHandler(w http.ResponseWriter, r *http.Request) {
-
 	post := getPostFromCtx(r)
 
 	var payload UpdatePostPayload
@@ -129,13 +127,14 @@ func (app *application) UpdatePostHandler(w http.ResponseWriter, r *http.Request
 		switch {
 		case errors.Is(err, store.ErrNotFound):
 			app.NotFoundResponse(w, r, err)
-
-		case errors.Is(err, store.ErrVersionConflict):
-			app.ResourceConflictResponse(w, r, err)
-
 		default:
 			app.InternalServerError(w, r, err)
 		}
+		return
+	}
+
+	if err := app.JSONResponse(w, http.StatusOK, post); err != nil {
+		app.InternalServerError(w, r, err)
 		return
 	}
 }
