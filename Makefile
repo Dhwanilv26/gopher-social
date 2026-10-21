@@ -30,3 +30,7 @@ docker-up:
 
 docker-down:
 	@docker compose down
+
+.PHONY: seed
+seed: 
+	@go run cmd/migrate/seed/main.go
