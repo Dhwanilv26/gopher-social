@@ -20,6 +20,7 @@ type Storage struct {
 		Update(context.Context, *Post) error
 	}
 	Users interface {
+		GetById(context.Context, int64) (*User, error)
 		Create(context.Context, *User) error
 	}
 
