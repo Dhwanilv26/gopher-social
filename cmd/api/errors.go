@@ -35,6 +35,6 @@ func (app *application) ResourceConflictResponse(
 	WriteJSONError(
 		w,
 		http.StatusConflict,
-		"resource was modified; fetch the latest version and retry",
+		"resource conflict error",
 	)
 }

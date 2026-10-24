@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"context"
 	"net/http"
 	"strconv"
 
@@ -9,21 +9,40 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
-	userId, err := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)
+type userKey string
 
-	if err != nil {
+const userCtx userKey = "user"
+
+func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
+
+	user := getUserFromContext(r)
+
+	if err := app.JSONResponse(w, http.StatusOK, user); err != nil {
+		app.InternalServerError(w, r, err)
+	}
+
+}
+
+type FollowUser struct {
+	UserID int64 `json:"user_id"`
+}
+
+func (app *application) FollowUserHandler(w http.ResponseWriter, r *http.Request) {
+
+	followerUser := getUserFromContext(r)
+	// todo : revert back to auth UserId from ctx
+	var payload FollowUser
+
+	if err := ReadJSON(w, r, &payload); err != nil {
 		app.BadRequestResponse(w, r, err)
 		return
 	}
 	ctx := r.Context()
+	if err := app.store.Followers.Follow(ctx, followerUser.ID, payload.UserID); err != nil {
 
-	user, err := app.store.Users.GetById(ctx, userId)
-
-	if err != nil {
-		switch {
-		case errors.Is(err, store.ErrNotFound):
-			app.BadRequestResponse(w, r, err)
+		switch err {
+		case store.ErrConflict:
+			app.ResourceConflictResponse(w, r, err)
 			return
 		default:
 			app.InternalServerError(w, r, err)
@@ -31,8 +50,64 @@ func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := app.JSONResponse(w, http.StatusOK, user); err != nil {
+	if err := app.JSONResponse(w, http.StatusNoContent, nil); err != nil {
 		app.InternalServerError(w, r, err)
 	}
 
+}
+
+func (app *application) UnfollowUserHandler(w http.ResponseWriter, r *http.Request) {
+
+	followerUser := getUserFromContext(r)
+	// todo : revert back to auth UserId from ctx
+	var payload FollowUser
+
+	if err := ReadJSON(w, r, &payload); err != nil {
+		app.BadRequestResponse(w, r, err)
+		return
+	}
+
+	ctx := r.Context()
+
+	if err := app.store.Followers.Unfollow(ctx, followerUser.ID, payload.UserID); err != nil {
+		app.InternalServerError(w, r, err)
+		return
+	}
+
+	if err := app.JSONResponse(w, http.StatusNoContent, nil); err != nil {
+		app.InternalServerError(w, r, err)
+	}
+
+}
+
+func (app *application) UserContextMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userID, err := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)
+		if err != nil {
+			app.BadRequestResponse(w, r, err)
+			return
+		}
+		ctx := r.Context()
+		user, err := app.store.Users.GetById(ctx, userID)
+		if err != nil {
+			switch err {
+			case store.ErrNotFound:
+				app.NotFoundResponse(w, r, err)
+				return
+			default:
+				app.InternalServerError(w, r, err)
+				return
+			}
+		}
+
+		ctx = context.WithValue(ctx, userCtx, user)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+
+	})
+}
+
+func getUserFromContext(r *http.Request) *store.User {
+	user, _ := r.Context().Value(userCtx).(*store.User)
+	return user
 }

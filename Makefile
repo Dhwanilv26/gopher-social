@@ -19,6 +19,10 @@ migrate-up:
 migrate-down:
 	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_ADDRESS) down $(filter-out $@,$(MAKECMDGOALS))
 
+.PHONY: migrate-force
+migrate-force:
+	migrate -path ./cmd/migrate/migrations -database "$(DB_ADDRESS)" force $(VERSION)
+
 .PHONY: migrate-version
 migrate-version:
 	@migrate -path=$(MIGRATIONS_PATH) -database=$(DB_ADDRESS) version
