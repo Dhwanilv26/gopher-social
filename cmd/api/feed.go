@@ -6,7 +6,11 @@ func (app *application) GetUserFeedHandler(w http.ResponseWriter, r *http.Reques
 
 	ctx := r.Context()
 
-	feed, err := app.store.Posts.GetUserFeed(ctx, int64(42))
+	type feedUserPayload struct {
+		userID int64
+	}
+
+	feed, err := app.store.Posts.GetUserFeed(ctx, int64(26))
 
 	if err != nil {
 		app.InternalServerError(w, r, err)
