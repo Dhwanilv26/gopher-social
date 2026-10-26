@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Dhwanilv26/gopher-social/docs" // this is required to generate swagger docs
 	"github.com/Dhwanilv26/gopher-social/internal/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -18,9 +19,10 @@ type application struct {
 }
 
 type config struct {
-	addr string
-	env  string
-	db   dBConfig
+	addr   string
+	env    string
+	db     dBConfig
+	apiURL string
 }
 
 type dBConfig struct {
@@ -77,6 +79,10 @@ func (app *application) mount() http.Handler {
 }
 
 func (app *application) run(mux http.Handler) error {
+
+	docs.SwaggerInfo.Version = version
+	docs.SwaggerInfo.Host = app.config.apiURL
+	docs.SwaggerInfo.BasePath = "/v1"
 
 	srv := http.Server{
 		Addr:         app.config.addr,

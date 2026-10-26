@@ -28,6 +28,6 @@ func GetInt(key string, fallback int) int {
 	if err != nil {
 		return fallback
 	}
-	
+
 	return valAsInt
 }

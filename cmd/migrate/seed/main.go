@@ -10,7 +10,7 @@ import (
 
 func main() {
 	addr := env.GetString("DB_ADDRESS", "postgres://admin:adminpassword@localhost:5433/socialnetwork?sslmode=disable")
-	
+
 	conn, err := db.New(addr, 3, 3, "15m")
 	if err != nil {
 		log.Fatal(err)
