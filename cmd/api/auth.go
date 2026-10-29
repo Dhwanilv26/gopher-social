@@ -1,6 +1,10 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/Dhwanilv26/gopher-social/internal/store"
+)
 
 type RegisterUserPayload struct {
 	Username string `json:"username" validate:"required,max=100"`
@@ -24,6 +28,26 @@ func (app *application) RegisterUserHandler(w http.ResponseWriter, r *http.Reque
 
 	if err := ReadJSON(w, r, payload); err != nil {
 		app.BadRequestResponse(w, r, err)
+		return
+	}
+
+	if err := Validate.Struct(payload); err != nil {
+		app.BadRequestResponse(w, r, err)
+		return
+	}
+
+	user := &store.User{
+		Username: payload.Username,
+		Email:    payload.Email,
+	}
+
+	if err := user.Password.Set(payload.Password); err != nil {
+		app.InternalServerError(w, r, err)
+		return
+	}
+
+	if err := app.JSONResponse(w, http.StatusCreated, nil); err != nil {
+		app.InternalServerError(w, r, err)
 		return
 	}
 }
