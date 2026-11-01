@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Dhwanilv26/gopher-social/docs" // this is required to generate swagger docs
+	"github.com/Dhwanilv26/gopher-social/internal/mailer"
 	"github.com/Dhwanilv26/gopher-social/internal/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -17,6 +18,7 @@ type application struct {
 	config config
 	store  store.Storage
 	logger *zap.SugaredLogger
+	mailer mailer.Client
 }
 
 type config struct {
@@ -28,7 +30,13 @@ type config struct {
 }
 
 type mailConfig struct {
-	exp time.Duration
+	sendGrid  sendGridConfig
+	exp       time.Duration
+	fromEmail string
+}
+
+type sendGridConfig struct {
+	apiKey string
 }
 
 type dBConfig struct {
