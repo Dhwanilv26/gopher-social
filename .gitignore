@@ -1,1 +1,5 @@
 .env
+# Go build output
+bin/
+*.exe
+*.out
