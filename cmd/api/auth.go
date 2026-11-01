@@ -94,7 +94,10 @@ func (app *application) RegisterUserHandler(w http.ResponseWriter, r *http.Reque
 		ActivationURL: activationURL,
 	}
 
-	if err := app.mailer.Send(mailer.UserWelcomeTemplate, user.Username, user.Email, vars, !isProdEnv); err != nil {
+	// make this function async by using pub sub and event queue, cant rely on 3rd party providers to send responses
+	status, err := app.mailer.Send(mailer.UserWelcomeTemplate, user.Username, user.Email, vars, !isProdEnv)
+
+	if err != nil {
 		app.logger.Errorw("error sending welcome email", "error", err)
 		// rollback user creation if email fails (SAGA pattern)
 		if err := app.store.Users.Delete(ctx, user.ID); err != nil {
@@ -103,6 +106,8 @@ func (app *application) RegisterUserHandler(w http.ResponseWriter, r *http.Reque
 		app.InternalServerError(w, r, err)
 		return
 	}
+
+	app.logger.Infow("Email sent", "status code", status)
 
 	if err := app.JSONResponse(w, http.StatusCreated, userWithToken); err != nil {
 		app.InternalServerError(w, r, err)
