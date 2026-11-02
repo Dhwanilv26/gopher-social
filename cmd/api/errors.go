@@ -18,7 +18,7 @@ func (app *application) BadRequestResponse(w http.ResponseWriter, r *http.Reques
 
 func (app *application) NotFoundResponse(w http.ResponseWriter, r *http.Request, err error) {
 	app.logger.Warnf("resource not found", "method", r.Method, "path", r.URL.Path, "error", err.Error())
-	WriteJSONError(w, http.StatusNotFound, "not found")
+	WriteJSONError(w, http.StatusNotFound, "resource not found")
 }
 
 func (app *application) ResourceConflictResponse(
@@ -32,4 +32,16 @@ func (app *application) ResourceConflictResponse(
 		http.StatusConflict,
 		"resource conflict error",
 	)
+}
+func (app *application) UnauthorizedErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Warnf("unauthorized error", "method", r.Method, "path", r.URL.Path, "error", err.Error())
+	WriteJSONError(w, http.StatusNotFound, "unauthorized error")
+}
+
+func (app *application) UnauthorizedBasicErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Warnf("unauthorized basic error", "method", r.Method, "path", r.URL.Path, "error", err.Error())
+
+	w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+
+	WriteJSONError(w, http.StatusUnauthorized, "unauthorized")
 }
