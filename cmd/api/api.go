@@ -110,7 +110,9 @@ func (app *application) mount() http.Handler {
 		// public routes
 
 		r.Route("/authentication", func(r chi.Router) {
+			// registration endpoint
 			r.Post("/user", app.RegisterUserHandler)
+			// login endpoint
 			r.Post("/token", app.CreateTokenHandler)
 		})
 

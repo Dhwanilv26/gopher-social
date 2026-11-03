@@ -40,6 +40,13 @@ func (p *password) Set(text string) error {
 	return nil
 }
 
+func (p *password) Compare(plainText string) error {
+	return bcrypt.CompareHashAndPassword(
+		p.hash,
+		[]byte(plainText),
+	)
+}
+
 type UsersStore struct {
 	db *sql.DB
 }
@@ -267,6 +274,7 @@ func (s *UsersStore) GetByEmail(ctx context.Context, email string) (*User, error
 		&user.Username,
 		&user.Email,
 		&user.Password,
+		&user.CreatedAt,
 	)
 
 	if err != nil {

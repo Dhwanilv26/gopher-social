@@ -158,6 +158,11 @@ func (app *application) CreateTokenHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if err := user.Password.Compare(payload.Password); err != nil {
+		app.UnauthorizedErrorResponse(w, r, err)
+		return
+	}
+
 	claims := jwt.MapClaims{
 		"sub": user.ID,
 		"exp": time.Now().Add(app.config.auth.token.exp).Unix(),
@@ -168,7 +173,7 @@ func (app *application) CreateTokenHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	token, err := app.authenticator.GenerateToken(claims)
-	
+
 	if err != nil {
 		app.InternalServerError(w, r, err)
 		return
