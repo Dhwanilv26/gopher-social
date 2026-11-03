@@ -52,14 +52,12 @@ func (app *application) CreatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	userId := 1 // fake user id to avoid foreign key constraints
-
+	user := getUserFromContext(r)
 	post := &store.Post{
 		Title:   payload.Title,
 		Content: payload.Content,
 		Tags:    payload.Tags,
-		// get real user id after auth
-		UserID: int64(userId),
+		UserID: int64(user.ID),
 	}
 	ctx := r.Context() // context passed to cancel db operations on network or db failure
 
