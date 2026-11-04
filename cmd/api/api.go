@@ -87,8 +87,8 @@ func (app *application) mount() http.Handler {
 			r.Route("/{postId}", func(r chi.Router) {
 				r.Use(app.PostsContextMiddleware)
 				r.Get("/", app.GetPostHandler)
-				r.Delete("/", app.DeletePostHandler)
-				r.Patch("/", app.UpdatePostHandler)
+				r.Patch("/", app.AuthorizePostAccess("moderator", app.UpdatePostHandler))
+				r.Delete("/", app.AuthorizePostAccess("admin", app.DeletePostHandler))
 			})
 
 		})
