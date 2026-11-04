@@ -57,7 +57,7 @@ func (app *application) CreatePostHandler(w http.ResponseWriter, r *http.Request
 		Title:   payload.Title,
 		Content: payload.Content,
 		Tags:    payload.Tags,
-		UserID: int64(user.ID),
+		UserID:  int64(user.ID),
 	}
 	ctx := r.Context() // context passed to cancel db operations on network or db failure
 

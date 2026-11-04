@@ -41,24 +41,34 @@ func (s *PostsStore) GetUserFeed(ctx context.Context, userID int64, fq Paginated
 		p.version,
 		p.tags,
 		u.username,
-		COUNT(c.id) AS comments_count
+		COUNT(c.id) AS comments_count		
 		FROM posts p
 		LEFT JOIN comments c ON c.post_id = p.id
 		LEFT JOIN users u ON p.user_id = u.id
 		WHERE
 			(p.user_id = $1
 		    OR p.user_id IN (
-				SELECT f.follower_id
+				SELECT f.user_id
 				FROM followers f
-				WHERE f.user_id = $1
+				WHERE f.follower_id = $1
 				)
 			)
 		    AND
 		    (p.title ILIKE '%' || $4 || '%' 
 			OR p.content ILIKE '%' || $4 || '%'
 			)
-			AND
-			(p.tags @> $5 OR $5 = '{}')
+			AND (
+			COALESCE(cardinality($5::varchar[]), 0) = 0
+			OR NOT EXISTS (
+				SELECT 1
+				FROM unnest($5::varchar[]) AS requested_tag
+				WHERE NOT EXISTS (
+					SELECT 1
+					FROM unnest(p.tags) AS post_tag
+					WHERE post_tag ILIKE requested_tag
+				)
+			)
+)
 		GROUP BY p.id, u.username
 		ORDER BY p.created_at ` + fq.Sort + `
 		LIMIT $2 OFFSET $3
@@ -75,7 +85,7 @@ func (s *PostsStore) GetUserFeed(ctx context.Context, userID int64, fq Paginated
 
 	defer rows.Close()
 
-	var feed []PostWithMetadata
+	feed := make([]PostWithMetadata, 0)
 
 	for rows.Next() {
 		var p PostWithMetadata

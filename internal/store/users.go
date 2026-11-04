@@ -105,7 +105,7 @@ func (s *UsersStore) GetById(ctx context.Context, userId int64) (*User, error) {
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		&user.Password,
+		&user.Password.hash,
 		&user.CreatedAt,
 	)
 
@@ -273,7 +273,7 @@ func (s *UsersStore) GetByEmail(ctx context.Context, email string) (*User, error
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		&user.Password,
+		&user.Password.hash,
 		&user.CreatedAt,
 	)
 
