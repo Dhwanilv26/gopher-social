@@ -121,7 +121,6 @@ func (s *UsersStore) GetById(ctx context.Context, userId int64) (*User, error) {
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		&user.Password.hash,
 		&user.CreatedAt,
 		&user.Role.ID,
 		&user.Role.Name,

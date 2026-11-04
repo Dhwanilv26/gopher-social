@@ -133,8 +133,21 @@ definitions:
       version:
         type: integer
     type: object
+  store.Role:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      level:
+        type: integer
+      name:
+        type: string
+    type: object
   store.User:
     properties:
+      Role:
+        $ref: '#/definitions/store.Role'
       created_at:
         type: string
       email:
@@ -143,6 +156,8 @@ definitions:
         type: integer
       is_active:
         type: boolean
+      role_id:
+        type: integer
       username:
         type: string
     type: object
