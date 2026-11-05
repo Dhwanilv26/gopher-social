@@ -9,7 +9,9 @@ import (
 	"github.com/Dhwanilv26/gopher-social/internal/env"
 	"github.com/Dhwanilv26/gopher-social/internal/mailer"
 	"github.com/Dhwanilv26/gopher-social/internal/store"
+	"github.com/Dhwanilv26/gopher-social/internal/store/cache"
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -49,6 +51,12 @@ func main() {
 			maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 30),
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
 		},
+		redisCfg: redisConfig{
+			address:  env.GetString("REDIS_ADDR", "localhost:6379"),
+			password: env.GetString("REDIS_PW", ""),
+			db:       env.GetInt("REDIS_DB", 0),
+			enabled:  env.GetBool("REDIS_ENABLED", false),
+		},
 		env: env.GetString("ENV", "development"),
 		mail: mailConfig{
 			exp:       time.Hour * 24 * 3, // 3 days to accept invitation
@@ -87,7 +95,15 @@ func main() {
 	defer db.Close()
 	logger.Info("database connection pool established")
 
+	var rdb *redis.Client
+	if cfg.redisCfg.enabled {
+		rdb = cache.NewRedisClient(cfg.redisCfg.address, cfg.redisCfg.password, cfg.redisCfg.db)
+		logger.Info("redis client initalized")
+		defer rdb.Close()
+	}
+
 	store := store.NewStorage(db)
+	redisStore := cache.NewRedisStorage(rdb)
 
 	mailer, err := mailer.NewSendgrid(cfg.mail.sendGrid.apiKey, cfg.mail.fromEmail)
 
@@ -100,6 +116,7 @@ func main() {
 	app := &application{
 		config:        cfg,
 		store:         store,
+		cacheStorage:  redisStore,
 		logger:        logger,
 		mailer:        mailer,
 		authenticator: jwtAuthenticator,

@@ -9,11 +9,17 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.12.3
+	github.com/redis/go-redis/v9 v9.23.0
 	github.com/sendgrid/sendgrid-go v3.16.1+incompatible
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
 	go.uber.org/zap v1.28.0
 	golang.org/x/crypto v0.58.0
+)
+
+require (
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	go.uber.org/atomic v1.12.0 // indirect
 )
 
 require (

@@ -9,6 +9,7 @@ import (
 	"github.com/Dhwanilv26/gopher-social/internal/auth"
 	"github.com/Dhwanilv26/gopher-social/internal/mailer"
 	"github.com/Dhwanilv26/gopher-social/internal/store"
+	"github.com/Dhwanilv26/gopher-social/internal/store/cache"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -18,6 +19,7 @@ import (
 type application struct {
 	config        config
 	store         store.Storage
+	cacheStorage  cache.Storage
 	logger        *zap.SugaredLogger
 	mailer        mailer.Client
 	authenticator auth.Authenticator
@@ -31,6 +33,14 @@ type config struct {
 	mail        mailConfig
 	frontendURL string
 	auth        authConfig
+	redisCfg    redisConfig
+}
+
+type redisConfig struct {
+	address  string
+	password string
+	db       int
+	enabled  bool
 }
 type authConfig struct {
 	basic basicConfig
