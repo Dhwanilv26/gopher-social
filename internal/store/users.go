@@ -61,12 +61,17 @@ func (s *UsersStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 		$1,
 		$2,
 		$3,
-		(SELECT id FROM roles WHERE name = 'user')
+		(SELECT id FROM roles WHERE name = $4)
 	)
 	RETURNING id, created_at
 	`
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeOutDuration)
 	defer cancel()
+
+	role := user.Role.Name
+	if role == "" {
+		role = "user"
+	}
 
 	err := tx.QueryRowContext(
 		ctx,
@@ -74,10 +79,12 @@ func (s *UsersStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 		user.Username,
 		user.Password.hash,
 		user.Email,
-	).Scan(
-		&user.ID,
-		&user.CreatedAt,
-	)
+		role,
+	).
+		Scan(
+			&user.ID,
+			&user.CreatedAt,
+		)
 
 	if err != nil {
 		switch {
