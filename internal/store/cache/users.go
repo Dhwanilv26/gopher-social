@@ -17,20 +17,23 @@ type UserStore struct {
 const UserExpTime = time.Minute
 
 func (s *UserStore) Get(ctx context.Context, userID int64) (*store.User, error) {
-	cacheKey := fmt.Sprintf("user-%v", userID)
+	cacheKey := fmt.Sprintf("user-%d", userID)
 
 	data, err := s.rdb.Get(ctx, cacheKey).Result()
+
 	if err != nil {
+		fmt.Printf("REDIS GET: key=%s, error=%v\n", cacheKey, err)
 		return nil, err
 	}
 
+	fmt.Printf("REDIS GET: key=%s, data=%s\n", cacheKey, data)
+
 	var user store.User
-	if data != "" {
-		err := json.Unmarshal([]byte(data), &user)
-		if err != nil {
-			return nil, err
-		}
+
+	if err := json.Unmarshal([]byte(data), &user); err != nil {
+		return nil, err
 	}
+
 	return &user, nil
 }
 

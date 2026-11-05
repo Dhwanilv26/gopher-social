@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/Dhwanilv26/gopher-social/internal/store"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 func (app *application) AuthorizePostAccess(requiredRole string, next http.HandlerFunc) http.HandlerFunc {
@@ -81,11 +83,7 @@ func (app *application) AuthTokenMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		ctx := r.Context()
-		user, err := app.store.Users.GetById(ctx, userID)
-		if err != nil {
-			app.UnauthorizedErrorResponse(w, r, err)
-			return
-		}
+		user, err := app.getUser(ctx, userID)
 		// storing only the userID in the jwt sub, but keeping the whole user in the authcontext, by getting the user from the userID
 		ctx = context.WithValue(ctx, userCtx, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
@@ -125,4 +123,42 @@ func (app *application) BasicAuthMiddlware() func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func (app *application) getUser(ctx context.Context, userID int64) (*store.User, error) {
+
+	// If Redis caching is disabled, directly query PostgreSQL.
+	if !app.config.redisCfg.enabled {
+		return app.store.Users.GetById(ctx, userID)
+	}
+
+	// Try retrieving the user from Redis.
+	user, err := app.cacheStorage.Users.Get(ctx, userID)
+
+	if err == nil {
+		// Cache HIT
+		app.logger.Infow("cache hit", "key", "user", "id", userID)
+		return user, nil
+	}
+
+	// Cache MISS or Redis error
+	if errors.Is(err, redis.Nil) {
+		app.logger.Infow("cache miss", "key", "user", "id", userID)
+	} else {
+		app.logger.Errorw("redis cache error", "id", userID, "error", err)
+	}
+
+	// Fetch from PostgreSQL.
+	user, err = app.store.Users.GetById(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Populate Redis cache.
+	if err := app.cacheStorage.Users.Set(ctx, user); err != nil {
+		app.logger.Errorw("failed to cache user", "id", userID, "error", err)
+	}
+
+	return user, nil
+
 }

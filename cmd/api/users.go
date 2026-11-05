@@ -28,7 +28,26 @@ const userCtx userKey = "user"
 //	@Router			/users/{id} [get]
 func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 
-	user := getUserFromContext(r)
+	userID, err := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)
+	if err != nil || userID < 1 {
+		app.BadRequestResponse(w, r, err)
+		return
+	}
+
+	ctx := r.Context()
+
+	user, err := app.getUser(ctx, userID)
+
+	if err != nil {
+		switch err {
+		case store.ErrNotFound:
+			app.NotFoundResponse(w, r, err)
+			return
+		default:
+			app.InternalServerError(w, r, err)
+			return
+		}
+	}
 
 	if err := app.JSONResponse(w, http.StatusOK, user); err != nil {
 		app.InternalServerError(w, r, err)
