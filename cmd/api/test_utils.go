@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Dhwanilv26/gopher-social/internal/auth"
 	"github.com/Dhwanilv26/gopher-social/internal/store"
 	"github.com/Dhwanilv26/gopher-social/internal/store/cache"
 	"go.uber.org/zap"
@@ -19,10 +20,13 @@ func newTestApplication(t *testing.T) *application {
 	mockStore := store.NewMockStore()
 	mockCacheStore := cache.NewMockStore()
 
+	testAuth := &auth.TestAuthenticator{}
+
 	return &application{
-		logger:       logger,
-		store:        mockStore,
-		cacheStorage: mockCacheStore,
+		logger:        logger,
+		store:         mockStore,
+		cacheStorage:  mockCacheStore,
+		authenticator: testAuth,
 	}
 }
 
