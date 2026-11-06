@@ -3,10 +3,6 @@ export
 
 MIGRATIONS_PATH = ./cmd/migrate/migrations
 
-.PHONY: test
-test:
-	@go test -v ./...
-
 .PHONY: migrate-create
 migrate-create:
 	@migrate create -seq -ext sql -dir $(MIGRATIONS_PATH) $(filter-out $@,$(MAKECMDGOALS))
@@ -43,3 +39,7 @@ seed:
 gen-docs:
 	@swag init -g main.go -d cmd/api,internal --parseInternal
 	@swag fmt
+
+.PHONY: test
+test:
+	@go test -v ./...

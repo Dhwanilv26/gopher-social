@@ -53,6 +53,7 @@ func (app application) checkRolePrecedence(ctx context.Context, user *store.User
 
 func (app *application) AuthTokenMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("AUTH MIDDLEWARE EXECUTED:", r.URL.Path)
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			app.UnauthorizedErrorResponse(w, r, fmt.Errorf("authorization header is missing"))

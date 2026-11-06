@@ -35,7 +35,7 @@ func (app *application) ResourceConflictResponse(
 }
 func (app *application) UnauthorizedErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
 	app.logger.Warnf("unauthorized error", "method", r.Method, "path", r.URL.Path, "error", err.Error())
-	WriteJSONError(w, http.StatusNotFound, "unauthorized error")
+	WriteJSONError(w, http.StatusUnauthorized, "unauthorized error")
 }
 
 func (app *application) UnauthorizedBasicErrorResponse(w http.ResponseWriter, r *http.Request, err error) {

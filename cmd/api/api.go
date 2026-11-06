@@ -128,6 +128,16 @@ func (app *application) mount() http.Handler {
 
 	})
 
+	chi.Walk(r, func(
+		method string,
+		route string,
+		handler http.Handler,
+		middlewares ...func(http.Handler) http.Handler,
+	) error {
+		fmt.Printf("%s %s\n", method, route)
+		return nil
+	})
+
 	return r
 }
 
