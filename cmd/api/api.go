@@ -13,6 +13,7 @@ import (
 	"github.com/Dhwanilv26/gopher-social/docs" // this is required to generate swagger docs
 	"github.com/Dhwanilv26/gopher-social/internal/auth"
 	"github.com/Dhwanilv26/gopher-social/internal/mailer"
+	"github.com/Dhwanilv26/gopher-social/internal/ratelimiter"
 	"github.com/Dhwanilv26/gopher-social/internal/store"
 	"github.com/Dhwanilv26/gopher-social/internal/store/cache"
 	"github.com/go-chi/chi/v5"
@@ -28,6 +29,7 @@ type application struct {
 	logger        *zap.SugaredLogger
 	mailer        mailer.Client
 	authenticator auth.Authenticator
+	rateLimiter   ratelimiter.Limiter
 }
 
 type config struct {
@@ -39,6 +41,7 @@ type config struct {
 	frontendURL string
 	auth        authConfig
 	redisCfg    redisConfig
+	rateLimiter ratelimiter.Config
 }
 
 type redisConfig struct {
@@ -85,6 +88,7 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Logger)
+	r.Use(app.RateLimiterMiddleware)
 
 	r.Use(middleware.Timeout(60 * time.Second))
 

@@ -8,6 +8,7 @@ import (
 	"github.com/Dhwanilv26/gopher-social/internal/db"
 	"github.com/Dhwanilv26/gopher-social/internal/env"
 	"github.com/Dhwanilv26/gopher-social/internal/mailer"
+	"github.com/Dhwanilv26/gopher-social/internal/ratelimiter"
 	"github.com/Dhwanilv26/gopher-social/internal/store"
 	"github.com/Dhwanilv26/gopher-social/internal/store/cache"
 	"github.com/joho/godotenv"
@@ -76,6 +77,11 @@ func main() {
 				issuer: "gophersocial",
 			},
 		},
+		rateLimiter: ratelimiter.Config{
+			RequestsPerTimeFrame: env.GetInt("RATELIMITER_REQUESTS_COUNT", 20),
+			TimeFrame:            time.Second * 5,
+			Enabled:              env.GetBool("RATE_LIMITER_ENABLED", true),
+		},
 	}
 
 	logger := zap.Must(zap.NewProduction()).Sugar()
@@ -102,6 +108,11 @@ func main() {
 		defer rdb.Close()
 	}
 
+	rateLimiter := ratelimiter.NewFixedWindowLimiter(
+		cfg.rateLimiter.RequestsPerTimeFrame,
+		cfg.rateLimiter.TimeFrame,
+	)
+
 	store := store.NewStorage(db)
 	redisStore := cache.NewRedisStorage(rdb)
 
@@ -120,6 +131,7 @@ func main() {
 		logger:        logger,
 		mailer:        mailer,
 		authenticator: jwtAuthenticator,
+		rateLimiter:   rateLimiter,
 	}
 
 	mux := app.mount()

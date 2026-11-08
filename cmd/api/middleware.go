@@ -163,3 +163,16 @@ func (app *application) getUser(ctx context.Context, userID int64) (*store.User,
 	return user, nil
 
 }
+
+func (app *application) RateLimiterMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if app.config.rateLimiter.Enabled {
+			// middleware.RealIP is already parsing the ip address and storing it in the remoteaddr here for us
+			if allow, retryAfter := app.rateLimiter.Allow(r.RemoteAddr); !allow {
+				app.rateLimitExceededResponse(w, r, retryAfter.String())
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
