@@ -85,6 +85,10 @@ func (app *application) AuthTokenMiddleware(next http.Handler) http.Handler {
 		}
 		ctx := r.Context()
 		user, err := app.getUser(ctx, userID)
+		if err != nil {
+			app.UnauthorizedErrorResponse(w, r, err)
+			return
+		}
 		// storing only the userID in the jwt sub, but keeping the whole user in the authcontext, by getting the user from the userID
 		ctx = context.WithValue(ctx, userCtx, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
