@@ -1,0 +1,57 @@
+
+name: Audit
+
+# When should this workflow run?
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+# Give the workflow only the permissions it needs.
+permissions:
+  contents: read
+
+# Define the jobs to execute.
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+
+    # Individual tasks, executed sequentially.
+    steps:
+      # 1. Download the repository code into the runner.
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # 2. Set up the Go environment.
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      # 3. Verify downloaded dependencies.
+      - name: Verify Dependencies
+        run: go mod verify
+
+      # 4. Compile all Go packages.
+      - name: Build
+        run: go build -v ./...
+
+      # 5. Check for suspicious Go code.
+      - name: Run go vet
+        run: go vet ./...
+
+      # 6. Install Staticcheck.
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      # 7. Perform additional static analysis.
+      - name: Run staticcheck
+        run: staticcheck ./...
+
+      # 8. Execute tests with race detection.
+      - name: Run Tests
+        run: go test -race ./...
