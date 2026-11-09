@@ -1,6 +1,7 @@
 package main
 
 import (
+	"expvar"
 	"log"
 	"time"
 
@@ -133,6 +134,12 @@ func main() {
 		authenticator: jwtAuthenticator,
 		rateLimiter:   rateLimiter,
 	}
+
+	// metrics collected
+	expvar.NewString("version").Set(version)
+	expvar.Publish("database", expvar.Func(func() any {
+		return db.Stats()
+	}))
 
 	mux := app.mount()
 	log.Fatal(app.run(mux))
